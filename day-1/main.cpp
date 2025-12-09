@@ -4,41 +4,46 @@
 
 using namespace std;
 
-void deconstruct(const string& input, string& direction, int& distance) {
-    direction = input.substr(0, 1);
-    distance  = stoi(input.substr(1));
-}
-
 int main() {
-
     ifstream inputFile("input.txt");
     if (!inputFile.is_open()) {
         perror("Could not open your file");
         return 1;
     }
 
-    const int dialStart = 50;
-    int dialPosition = dialStart;
-    int pointsToZero = 0;
+    int position = 50;
+    int zero_count = 0;
+    string line;
+    while (getline(inputFile, line)) {
+        char dir = line[0];
+        int dist = stoi(line.substr(1));
 
-    string input;
-    while (getline(inputFile, input)) {
+        // Part 1
+        // int full = dist / 100;
+        // int partial = dist % 100;
+        // int delta = (dir == 'L') ? -partial : partial;
+        // int next_position = position + delta;
+        // if (next_position % 100 == 0)
+        //     zero_count++;
 
-        string direction;
-        int distance;
-        deconstruct(input, direction, distance);  // cleaner without pointers
+        // Part 2
+        int full = dist / 100;
+        int partial = dist % 100;
 
-        if (direction == "R") {
-            dialPosition = (dialPosition + distance) % 100;
-        } else {
-            dialPosition = (dialPosition - distance + 100) % 100;
+        zero_count += full; // full 100-step cycles
+
+        int delta = (dir == 'L') ? -partial : partial;
+        int next_position = position + delta;
+
+        // check if zero is crossed in the partial movement
+        // from position to a value over 100, or one under 0
+        if (position != 0) {
+            if (dir == 'L' && next_position <= 0) zero_count++;
+            else if (dir == 'R' && next_position >= 100) zero_count++;
         }
 
-        if (dialPosition == 0) {
-            pointsToZero++;
-        }
+        position = (next_position % 100 + 100) % 100;
     }
 
-    cout << pointsToZero << endl;
-    return 0;
+    cout << zero_count << endl;
 }
