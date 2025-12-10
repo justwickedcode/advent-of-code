@@ -1,6 +1,0 @@
-#import <iostream>
-
-int main() {
-    std::cout<<"hello";
-    return 1;
-}
