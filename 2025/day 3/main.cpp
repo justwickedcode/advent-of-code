@@ -69,6 +69,7 @@ long long getLargest12DigitsJoltage(const string &str)
 
     for (char c : str)
     {
+        // pops {toRemove} digits smaller than c at the end and replace them with c
         while (!stack.empty() &&
                toRemove > 0 &&
                stack.back() < c)
@@ -76,6 +77,7 @@ long long getLargest12DigitsJoltage(const string &str)
             stack.pop_back();
             --toRemove;
         }
+        // add all digits to stack
         stack.push_back(c);
     }
 
