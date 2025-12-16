@@ -3,171 +3,177 @@
 #include <sstream>
 #include <vector>
 #include <string>
-using namespace std;
+#include <algorithm>
 
-// Read operations from a specific line in the file
-vector<char> readOperations(ifstream &fin, int lineNumber)
+using std::ifstream;
+using std::string;
+using std::vector;
+using ull = unsigned long long;
+
+void rewindFile(ifstream &fin)
 {
     fin.clear();
-    fin.seekg(0); // rewind file
-    string line;
-    int currentLine = 0;
-    vector<char> operations;
-
-    while (getline(fin, line))
-    {
-        currentLine++;
-        if (currentLine == lineNumber)
-        {
-            for (char c : line)
-                if (c != ' ')
-                    operations.push_back(c);
-            break;
-        }
-    }
-    return operations;
+    fin.seekg(0);
 }
 
-// Process numbers from the first few lines and apply operations
-vector<unsigned long long> processNumbers(ifstream &fin, int linesToRead, const vector<char> &operations)
+ull sumResults(const vector<ull> &values)
 {
-    fin.clear();
-    fin.seekg(0); // rewind file
+    ull sum = 0;
+    for (ull v : values)
+        sum += v;
+    return sum;
+}
+
+// Part 1
+vector<char> readOperations(ifstream &fin, int lineNumber)
+{
+    rewindFile(fin);
+
     string line;
-    vector<unsigned long long> results;
-    int currentLine = 0;
-    size_t opIndex = 0;
-
-    while (getline(fin, line))
+    for (int current = 1; std::getline(fin, line); ++current)
     {
-        currentLine++;
-        opIndex = 0;
-        if (currentLine > linesToRead)
-            break;
-
-        istringstream iss(line);
-        unsigned long long number;
-
-        while (iss >> number)
+        if (current == lineNumber)
         {
-            // Apply operation if possible
-            if (!results.empty() && opIndex < operations.size() && opIndex < results.size())
-            {
-                if (operations[opIndex] == '+')
-                    number += results[opIndex];
-                else if (operations[opIndex] == '*')
-                    number *= results[opIndex];
+            vector<char> ops;
+            for (char c : line)
+                if (c != ' ')
+                    ops.push_back(c);
+            return ops;
+        }
+    }
 
-                results[opIndex] = number;
+    return {};
+}
+
+
+// Part 1
+vector<ull> processNumbers(ifstream &fin, int linesToRead, const vector<char> &ops)
+{
+    rewindFile(fin);
+
+    vector<ull> results;
+    string line;
+
+    // add numbers to results on index on first row, then apply the operations on the added values at each index
+
+    // eg: retults[0] = 4  for line 1
+    // results[0] = 4 * 3 for line 2
+    // results[0] = 4 * 3 * 12 for line 3 etc.
+
+    for (int row = 1; row <= linesToRead && std::getline(fin, line); ++row)
+    {
+        std::istringstream iss(line);
+        ull value;
+        size_t index = 0;
+
+        while (iss >> value)
+        {
+            if (index < results.size() && index < ops.size())
+            {
+                if (ops[index] == '+')
+                    value += results[index];
+                if (ops[index] == '*')
+                    value *= results[index];
+                results[index] = value;
             }
             else
             {
-                // First line or new position not yet in results
-                if (opIndex >= results.size())
-                    results.push_back(number);
-                else
-                    results[opIndex] = number;
+                results.push_back(value);
             }
-
-            opIndex++;
+            ++index;
         }
     }
 
     return results;
 }
 
-vector<unsigned long long> processCephalopodNumbers(ifstream &fin)
+// Part 2 - Work hard, not smart
+vector<ull> processCephalopodNumbers(ifstream &fin)
 {
-    fin.clear();
-    fin.seekg(0); // rewind file
+    rewindFile(fin);
+
+    constexpr int DIGIT_ROWS = 4;
+    constexpr int OP_ROW = 4;
+    constexpr int TOTAL_ROWS = 5;
+
+
+    // Store the entire input in a grid
+    vector<vector<char>> grid(TOTAL_ROWS);
     string line;
 
-    const int rows = 5;    // 4 rows of numbers + 1 row of operations
-    const int cols = 3722; // adjust to your input width
-    vector<vector<char>> numbers(rows, vector<char>(cols, ' '));
-    vector<unsigned long long> results;
+    for (int i = 0; i < TOTAL_ROWS && std::getline(fin, line); ++i)
+        grid[i] = {line.begin(), line.end()};
 
-    // Read the first 5 lines into numbers
-    int currentLine = 0;
-    while (getline(fin, line) && currentLine < rows)
+    size_t maxCols = 0;
+    for (const auto &row : grid)
+        maxCols = std::max(maxCols, row.size());
+
+    vector<ull> results;
+    char currentOp = ' ';
+    int currentIndex = -1;
+
+    // keep track of the current operation and construct the numbers
+    // then add the numbers with the opearion applied into results
+    // on next line apply the operation on the next number formed
+    // when a new operation is found, change it and increase the index of the result added, we're done applying the operation on the previous result
+
+    for (size_t col = 0; col < maxCols; ++col)
     {
-        for (size_t i = 0; i < line.size() && i < cols; i++)
-            numbers[currentLine][i] = line[i];
-        currentLine++;
-    }
-
-    // Apply operations column-wise
-    for (size_t i = 0; i < cols; i++)
-    {
-        unsigned long long number = 0;
-        char currentOp = ' ';
-
-        // First 4 rows are digits
+        ull number = 0;
         bool hasDigit = false;
-        for (size_t j = 0; j < 4; j++)
+
+        for (int r = 0; r < DIGIT_ROWS; ++r)
         {
-            if (numbers[j][i] != ' ')
+            if (col < grid[r].size() && grid[r][col] != ' ')
             {
-                number = number * 10 + (numbers[j][i] - '0');
+                number = number * 10 + (grid[r][col] - '0');
                 hasDigit = true;
             }
         }
 
-        // Skip this column if no number
         if (!hasDigit)
             continue;
 
-        // 5th row is operation
-        if (numbers[4][i] != ' ')
-            currentOp = numbers[4][i];
-
-        // Apply operation if possible
-        if (i < results.size() && currentOp != ' ')
+        if (col < grid[OP_ROW].size() && grid[OP_ROW][col] != ' ')
         {
-            if (currentOp == '+')
-                number += results[i];
-            else if (currentOp == '*')
-                number *= results[i];
+            currentOp = grid[OP_ROW][col];
+            ++currentIndex;
+        }
 
-            results[i] = number;
+        if (currentIndex == static_cast<int>(results.size()))
+        {
+            results.push_back(number);
         }
         else
         {
-            if (i >= results.size())
-                results.push_back(number);
-            else
-                results[i] = number;
+            if (currentOp == '+')
+                results[currentIndex] += number;
+            if (currentOp == '*')
+                results[currentIndex] *= number;
         }
     }
 
     return results;
-}
-
-// Compute sum of a vector
-unsigned long long sumResults(const vector<unsigned long long> &results)
-{
-    unsigned long long sum = 0;
-    for (unsigned long long n : results)
-        sum += n;
-    return sum;
 }
 
 int main()
 {
     ifstream fin("input.txt");
-    if (!fin.is_open())
+    if (!fin)
     {
-        cerr << "Error opening file." << endl;
+        std::cerr << "Error opening file\n";
         return 1;
     }
 
-    // opeartions on line 5, numbes on lines 1 - 4
+    // Part 1
     vector<char> operations = readOperations(fin, 5);
-    vector<unsigned long long> results = processCephalopodNumbers(fin);
-    unsigned long long sum = sumResults(results);
+    vector<ull> part1Results = processNumbers(fin, 4, operations);
 
-    cout << "Sum: " << sum << endl;
+    std::cout << "Part 1 Sum: " << sumResults(part1Results) << std::endl;
 
-    fin.close();
+    // Part 2
+    vector<ull> part2Results = processCephalopodNumbers(fin);    
+    std::cout << "Part 2 Sum: " << sumResults(part2Results) <<std::endl;
+
     return 0;
 }
