@@ -76,12 +76,6 @@ vector<unsigned long long> processNumbers(ifstream &fin, int linesToRead, const 
     return results;
 }
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-using namespace std;
-
 vector<unsigned long long> processCephalopodNumbers(ifstream &fin)
 {
     fin.clear();
