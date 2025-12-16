@@ -67,9 +67,17 @@ int main()
     for (const auto &r : ranges)
     {
         if (merged.empty() || r.min > merged.back().max + 1)
+        {   
+            // no overlap -> add new range
             merged.push_back(r);
+        }
+           
         else
+        {
+            // overlap -> extend last range if needed
             merged.back().max = std::max(merged.back().max, r.max);
+        }
+            
     }
 
     // count total unique fresh IDs
