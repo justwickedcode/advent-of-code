@@ -51,7 +51,6 @@ int main()
     // number of ways to reach the column
     vector<long long> ways(m, 0);
 
-    // Find start column
     int startCol = 0;
     for (int i = 0; i < m; i++)
     {
@@ -64,7 +63,6 @@ int main()
 
     ways[startCol] = 1;
 
-    // Iterate over rows
     for (int r = 0; r < n - 1; r++)
     {
         vector<long long> next(m, 0);
@@ -80,15 +78,15 @@ int main()
             else if (cell == '^')
             {
                 if (c > 0)
-                    next[c - 1] += ways[c]; // Move down-left
+                    next[c - 1] += ways[c]; // move down-left
                 if (c < m - 1)
-                    next[c + 1] += ways[c]; // Move down-right
+                    next[c + 1] += ways[c]; // move down-right
             }
         }
         ways = next;
     }
 
-    // Sum all ways in the last row
+    // sum all ways in the last row
     long long total = 0;
     for (long long w : ways)
         total += w;
